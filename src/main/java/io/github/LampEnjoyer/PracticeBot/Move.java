@@ -52,7 +52,7 @@ public class Move {
 
     @Override
     public String toString(){
-        return ("From: " + getFromLocation() + " To: " + getToLocation() + " MoveType: " + getMoveType() + " Promotion: " + getPromotion()) + " Score: " + getScore();
+        return ("From: " + getFromLocation() + " To: " + getToLocation() + " MoveType: " + getMoveType() + " Promotion: " + getPromotion()) + " Estimated Score: " + getScore();
     }
 
     @Override

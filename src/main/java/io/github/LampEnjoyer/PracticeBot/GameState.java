@@ -42,7 +42,7 @@ public class GameState {
         if(arr[2].equals("-")){
             currentEnPassantSquare = -1;
         } else{
-            currentEnPassantSquare = arr[2].charAt(0) - 'a' + (arr[2].charAt(1) - '0' ) * 8;
+             currentEnPassantSquare = arr[2].charAt(0) - 'a' + (arr[2].charAt(1) - '0' ) * 8;
         }
         halfMoveClock = Integer.parseInt(arr[3]);
         moveCounter = Integer.parseInt(arr[4]);
@@ -563,9 +563,7 @@ public class GameState {
         } else{
             score += boardValues[movingType][toIndex ^ 56] - boardValues[movingType][fromIndex ^ 56]; //flip because array is from black's pov when I generated
         }
-//        if( ((1L << toIndex) & getAttackMap(!isWhiteTurn)) != 0){
-//            score += pieceValues[movingType % 6];
-//        }
+
 
         if(m.getMoveType() == 2){
             score += 20; //Castling is good

@@ -12,6 +12,8 @@ public class Evaluator {
     static final int ROOK = 500;
     static final int QUEEN = 900;
 
+    static final int CHECKMATE = 1000000;
+
     public static int positions = 0;
     public static int ttProbes = 0;
     public static int ttHits;
@@ -98,13 +100,22 @@ public class Evaluator {
                 return new MoveScore(entry.getMove(), entry.getScore());
             }
         }
-        if(depth == 0 || gameState.isGameOver()){
+        List<Move> list = gameState.getAllPossibleMoves(isWhite);
+        if(list.isEmpty()){
+            if(MoveValidator.isKingInCheck(gameState, !isWhite)){
+                int mateScore = isWhite ? -CHECKMATE : CHECKMATE;
+               // System.out.println("CHECKMATE DETECTED! isWhite=" + isWhite + " score=" + mateScore + " depth=" + depth);
+                return new MoveScore(null, mateScore);
+            } else{
+                return new MoveScore(null, 0); //stalemate
+            }
+        }
+        if(depth == 0){
             int score = evaluateBoard(gameState);
             TranspositionTable.store(hash, 0, score, depth, null);
             return new MoveScore(null, score);
         }
         Move bestMove = null;
-        List<Move> list = gameState.getAllPossibleMoves(isWhite);
         if(prevBest != null){
             reorderMoves(prevBest.getMove(), list);
         }
@@ -147,6 +158,7 @@ public class Evaluator {
         TranspositionTable.store(hash, depth, bestScore, flag, bestMove);
         return new MoveScore(bestMove, bestScore);
     }
+
     private static void reorderMoves(Move move, List<Move> list)  {//Figure out why so many hash collisions
         if(!list.remove(move)) {
             notFound++;
