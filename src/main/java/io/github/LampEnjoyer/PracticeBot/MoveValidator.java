@@ -99,8 +99,12 @@ public class MoveValidator {
                 }
             }
         }
-
         return true;
+    }
+
+    public static boolean isStalemate(GameState gameState){
+        long[][] pieceMoveMasks = moveGenerator.getPieceMoveMasks();
+        return numAttackers(gameState) == 0 && gameState.getAllPossibleMoves(gameState.getTurn()).isEmpty();
     }
 
     public static boolean canKingEscape(GameState gameState){

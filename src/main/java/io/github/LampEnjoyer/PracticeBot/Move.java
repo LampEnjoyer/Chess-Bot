@@ -8,7 +8,7 @@ public class Move {
     private static final int MOVE_TYPE = 0x3 << 12; // 11 000000 000000 (bits 13-14)
     private static final int PROMOTION = 0x7 << 14; // 111 00 000000 000000 (bits 15-17)
 
-    private int score = 0;
+    private int score = 0; //Temp Value to approximate good moves
 
     // Packed move (32-bit int) but we only need first 17 :( could've used a short instead
     private final int moveValue;
@@ -30,8 +30,7 @@ public class Move {
     }
 
     public int getMoveType(){
-        int num = (moveValue & MOVE_TYPE) >> 12;
-        return num; //0 = move, 1= Capture, 2 = Castle, 3 = En-Passant
+        return (moveValue & MOVE_TYPE) >> 12; //0 = move, 1= Capture, 2 = Castle, 3 = En-Passant
     }
 
     public int getPromotion(){

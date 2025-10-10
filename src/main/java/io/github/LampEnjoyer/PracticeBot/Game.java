@@ -80,7 +80,7 @@ public class Game {
                     System.out.println("here");
                     move = getPlayerMove(book.getMove(gameState.getFenNotation()));
                 } else{
-                    move = Evaluator.getBestMove(gameState, 2, Integer.MIN_VALUE, Integer.MAX_VALUE, false).getMove();
+                    move = Evaluator.getBestMove(gameState, 2, Integer.MIN_VALUE, Integer.MAX_VALUE, false, null).getMove();
                 }
                 gameState.makeMove(move);
                 System.out.println("Good move");

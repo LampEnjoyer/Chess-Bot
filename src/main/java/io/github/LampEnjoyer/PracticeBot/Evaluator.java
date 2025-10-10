@@ -79,7 +79,7 @@ public class Evaluator {
         }
         return new MoveScore(bestMove, bestEval);
     }
-    public static MoveScore getBestMove(GameState gameState, int depth, int alpha, int beta, boolean isWhite){
+    public static MoveScore getBestMove(GameState gameState, int depth, int alpha, int beta, boolean isWhite, MoveScore prevBest){
         positions++;
         long hash = Zobrist.computeHash(gameState);
         ttProbes++;
@@ -105,6 +105,9 @@ public class Evaluator {
         }
         Move bestMove = null;
         List<Move> list = gameState.getAllPossibleMoves(isWhite);
+        if(prevBest != null){
+            reorderMoves(prevBest.getMove(), list);
+        }
         if(entry != null && entry.getMove() != null && entry.getDepth() >= depth - 2 && entry.getZobristHash() == hash){
             ttHits++;
             reorderMoves(entry.getMove(), list);
@@ -115,7 +118,7 @@ public class Evaluator {
         int bestScore = isWhite ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         for (Move move : list) {
             gameState.makeMove(move);
-            MoveScore result = getBestMove(gameState, depth - 1, alpha, beta, !isWhite);
+            MoveScore result = getBestMove(gameState, depth - 1, alpha, beta, !isWhite, null);
             gameState.undoMove();
             if (isWhite) { // Maximizing player
                 if (result.getScore() > bestScore) {
@@ -144,9 +147,8 @@ public class Evaluator {
         TranspositionTable.store(hash, depth, bestScore, flag, bestMove);
         return new MoveScore(bestMove, bestScore);
     }
-    private static void reorderMoves(Move move, List<Move> list)  {
+    private static void reorderMoves(Move move, List<Move> list)  {//Figure out why so many hash collisions
         if(!list.remove(move)) {
-            System.err.println("MOVE NOT FOUND IN LIST");
             notFound++;
         } else {
             list.addFirst(move);
@@ -156,8 +158,7 @@ public class Evaluator {
     public static MoveScore iterativeSearch(GameState gameState, int depth){
         MoveScore bestMove = null;
         for(int i = 1; i<= depth; i++){
-            bestMove = getBestMove(gameState, i,Integer.MIN_VALUE, Integer.MAX_VALUE, gameState.getTurn());
-
+            bestMove = getBestMove(gameState, i,Integer.MIN_VALUE, Integer.MAX_VALUE, gameState.getTurn(), bestMove);
         }
         return bestMove;
     }
