@@ -322,9 +322,6 @@ public class GameState {
         hash ^= Zobrist.turnHash;
     }
 
-
-
-
     public void updateCastlingRights(int movingPiece, int fromIndex, int toIndex){
         if(movingPiece == 11){ //Black king
             castlingRights &= 0b1100;
@@ -569,6 +566,23 @@ public class GameState {
             score += 20; //Castling is good
         }
         m.setScore(score);
+    }
+
+    public List<Move> getAllCaptures(){
+        List<Move> captureList = new ArrayList<>();
+        for(PieceType pieceType : PieceType.values()) {
+            for (Move m : pieceType.generateMoves(this, moveGenerator.getPieceMoveMasks(), isWhiteTurn)) {
+                if (MoveValidator.validateMove(this, m)) {
+                    undoMove();
+                    if(m.getMoveType() == 1){
+                        assignScore(m);
+                        captureList.add(m);
+                    }
+                }
+            }
+        }
+        sortMoves(captureList);
+        return captureList;
     }
 
 }

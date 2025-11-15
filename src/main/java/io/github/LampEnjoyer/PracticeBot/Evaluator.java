@@ -2,6 +2,7 @@ package io.github.LampEnjoyer.PracticeBot;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Evaluator {
@@ -18,6 +19,8 @@ public class Evaluator {
     public static int ttProbes = 0;
     public static int ttHits;
     public static int notFound;
+
+    private static final int MAX_QUIESCENCE_DEPTH = 10;
 
     public static MoveScore [][] pvTable = new MoveScore[10][10];
 
@@ -111,7 +114,8 @@ public class Evaluator {
             }
         }
         if(depth == 0){
-            int score = evaluateBoard(gameState);
+           // int score = evaluateBoard(gameState);
+            int score = quiescenceSearch(gameState,alpha,beta,isWhite, 0);
             TranspositionTable.store(hash, 0, score, depth, null);
             return new MoveScore(null, score);
         }
@@ -174,5 +178,41 @@ public class Evaluator {
         }
         return bestMove;
     }
+
+    public static int quiescenceSearch(GameState gameState, int alpha, int beta, boolean isWhite, int depth){
+        int boardEval = evaluateBoard(gameState);
+
+        // Stand-pat from current player's perspective
+        int standPat = isWhite ? boardEval : -boardEval;
+
+        if(standPat >= beta){
+            return beta;
+        }
+        if(standPat > alpha){
+            alpha = standPat;
+        }
+
+        if(depth >= MAX_QUIESCENCE_DEPTH){
+            return alpha;
+        }
+        List<Move> captureList = gameState.getAllCaptures();
+        for(Move m : captureList){
+            gameState.makeMove(m);
+            if(MoveValidator.isKingInCheck(gameState, isWhite)){
+                gameState.undoMove();
+                continue;
+            }
+            int score = -quiescenceSearch(gameState, -beta, -alpha, !isWhite, depth + 1);
+            gameState.undoMove();
+            if(score >= beta){
+                return beta;
+            }
+            if(score > alpha){
+                alpha = score;
+            }
+        }
+        return alpha;
+    }
+
 
 }

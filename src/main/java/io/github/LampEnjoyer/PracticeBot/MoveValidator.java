@@ -61,7 +61,7 @@ public class MoveValidator {
         if(!isKingInCheck(gameState, gameState.getTurn())){
             return true;
         }else{
-            gameState.undoMove();
+            gameState.undoMove();   
             return false;
         }
     }
