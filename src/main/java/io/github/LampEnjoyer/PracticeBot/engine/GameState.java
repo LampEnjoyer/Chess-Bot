@@ -1,8 +1,7 @@
-package io.github.LampEnjoyer.PracticeBot;
+package io.github.LampEnjoyer.PracticeBot.engine;
 
 import java.util.*;
 import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class GameState {
 

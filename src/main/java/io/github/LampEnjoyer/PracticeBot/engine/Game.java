@@ -1,4 +1,4 @@
-package io.github.LampEnjoyer.PracticeBot;
+package io.github.LampEnjoyer.PracticeBot.engine;
 
 import java.io.IOException;
 import java.util.Scanner;
@@ -7,18 +7,18 @@ public class Game {
     private GameState gameState;
     private Scanner scan;
     private MoveGenerator moveGenerator = new MoveGenerator();
-    private OpeningBook book;
+    private MoveValidator.OpeningBook book;
 
     public Game() throws IOException {
         this.gameState = new GameState();
         this.scan = new Scanner(System.in);
-        book = new OpeningBook();
+        book = new MoveValidator.OpeningBook();
     }
 
     public Game(Board board) throws IOException {
         this.gameState = new GameState(board);
         this.scan = new Scanner(System.in);
-        book = new OpeningBook();
+        book = new MoveValidator.OpeningBook();
     }
 
     public void play(){
@@ -80,7 +80,7 @@ public class Game {
                     System.out.println("here");
                     move = getPlayerMove(book.getMove(gameState.getFenNotation()));
                 } else{
-                    move = Evaluator.getBestMove(gameState, 2, Integer.MIN_VALUE, Integer.MAX_VALUE, false, null).getMove();
+                    move = Evaluator.getBestMove(gameState, 2, Integer.MIN_VALUE, Integer.MAX_VALUE, false, null, true).getMove();
                 }
                 gameState.makeMove(move);
                 System.out.println("Good move");

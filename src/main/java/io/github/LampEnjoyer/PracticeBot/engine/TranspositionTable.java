@@ -1,8 +1,8 @@
-package io.github.LampEnjoyer.PracticeBot;
+package io.github.LampEnjoyer.PracticeBot.engine;
 
 public class TranspositionTable {
 
-    private static TTEntry [] table = new TTEntry[1 << 20];
+    private static TTEntry[] table = new TTEntry[1 << 20];
 
     public static void store(long zobristHash, int depth, int score, int flag, Move bestMove) {
         int index = (int)(Math.abs(zobristHash % (table.length)));

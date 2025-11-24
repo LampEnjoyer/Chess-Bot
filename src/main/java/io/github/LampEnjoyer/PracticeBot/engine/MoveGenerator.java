@@ -1,7 +1,4 @@
-package io.github.LampEnjoyer.PracticeBot;
-
-import java.util.ArrayList;
-import java.util.List;
+package io.github.LampEnjoyer.PracticeBot.engine;
 
 public class MoveGenerator {
 

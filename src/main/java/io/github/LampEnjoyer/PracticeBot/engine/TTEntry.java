@@ -1,4 +1,4 @@
-package io.github.LampEnjoyer.PracticeBot;
+package io.github.LampEnjoyer.PracticeBot.engine;
 
 public class TTEntry {
     private final long zobristHash;

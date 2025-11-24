@@ -1,4 +1,4 @@
-package io.github.LampEnjoyer.PracticeBot;
+package io.github.LampEnjoyer.PracticeBot.engine;
 
 
 import java.util.ArrayList;

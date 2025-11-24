@@ -1,4 +1,4 @@
-package io.github.LampEnjoyer.PracticeBot;
+package io.github.LampEnjoyer.PracticeBot.engine;
 
 //This class is an extension of the Move class and is designed to help us undoMoves during our search tree/checking if moves are legal
 public class MoveState {

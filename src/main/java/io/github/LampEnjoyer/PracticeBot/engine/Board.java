@@ -1,4 +1,4 @@
-package io.github.LampEnjoyer.PracticeBot;
+package io.github.LampEnjoyer.PracticeBot.engine;
 
 public class Board {
     private long bitboard[] = new long[12];

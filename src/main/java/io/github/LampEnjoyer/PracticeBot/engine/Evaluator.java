@@ -1,8 +1,6 @@
-package io.github.LampEnjoyer.PracticeBot;
+package io.github.LampEnjoyer.PracticeBot.engine;
 
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Evaluator {
@@ -22,7 +20,7 @@ public class Evaluator {
 
     private static final int MAX_QUIESCENCE_DEPTH = 10;
 
-    public static MoveScore [][] pvTable = new MoveScore[10][10];
+    public static MoveScore[][] pvTable = new MoveScore[10][10];
 
 
 

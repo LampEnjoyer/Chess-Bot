@@ -1,6 +1,4 @@
-package io.github.LampEnjoyer.PracticeBot;
-
-import java.util.Objects;
+package io.github.LampEnjoyer.PracticeBot.engine;
 
 public class MoveScore {
 
