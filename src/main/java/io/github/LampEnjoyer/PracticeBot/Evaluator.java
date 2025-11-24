@@ -84,7 +84,7 @@ public class Evaluator {
         }
         return new MoveScore(bestMove, bestEval);
     }
-    public static MoveScore getBestMove(GameState gameState, int depth, int alpha, int beta, boolean isWhite, MoveScore prevBest){
+    public static MoveScore getBestMove(GameState gameState, int depth, int alpha, int beta, boolean isWhite, MoveScore prevBest, boolean allowNull){
         positions++;
         long hash = Zobrist.computeHash(gameState);
         ttProbes++;
@@ -119,6 +119,18 @@ public class Evaluator {
             TranspositionTable.store(hash, 0, score, depth, null);
             return new MoveScore(null, score);
         }
+        if(allowNull && depth >= 3 && !MoveValidator.isKingInCheck(gameState,isWhite) && !hasOnlyPawns(gameState,isWhite)){
+            gameState.makeNullMove();
+            MoveScore nullResult = getBestMove(gameState, depth - 2, alpha, beta, !isWhite, null,false);
+            gameState.undoMove();
+            // If null move causes cutoff, position is too good
+            if(isWhite && nullResult.getScore() >= beta) {
+                return new MoveScore(null, beta); // Fail-high for white
+            }
+            if(!isWhite && nullResult.getScore() <= alpha) {
+                return new MoveScore(null, alpha); // Fail-low for black
+            }
+        }
         Move bestMove = null;
         if(prevBest != null){
             reorderMoves(prevBest.getMove(), list);
@@ -133,7 +145,7 @@ public class Evaluator {
         int bestScore = isWhite ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         for (Move move : list) {
             gameState.makeMove(move);
-            MoveScore result = getBestMove(gameState, depth - 1, alpha, beta, !isWhite, null);
+            MoveScore result = getBestMove(gameState, depth - 1, alpha, beta, !isWhite, null, true);
             gameState.undoMove();
             if (isWhite) { // Maximizing player
                 if (result.getScore() > bestScore) {
@@ -174,17 +186,15 @@ public class Evaluator {
     public static MoveScore iterativeSearch(GameState gameState, int depth){
         MoveScore bestMove = null;
         for(int i = 1; i<= depth; i++){
-            bestMove = getBestMove(gameState, i,Integer.MIN_VALUE, Integer.MAX_VALUE, gameState.getTurn(), bestMove);
+            bestMove = getBestMove(gameState, i,Integer.MIN_VALUE, Integer.MAX_VALUE, gameState.getTurn(), bestMove, true);
         }
         return bestMove;
     }
 
     public static int quiescenceSearch(GameState gameState, int alpha, int beta, boolean isWhite, int depth){
         int boardEval = evaluateBoard(gameState);
-
         // Stand-pat from current player's perspective
         int standPat = isWhite ? boardEval : -boardEval;
-
         if(standPat >= beta){
             return beta;
         }
@@ -212,6 +222,17 @@ public class Evaluator {
             }
         }
         return alpha;
+    }
+
+    public static boolean hasOnlyPawns(GameState gameState, boolean isWhite){
+        int shift = isWhite ? 0 : 6;
+        long [] board = gameState.getBoard().getBitboard();
+        for(int i = 1 + shift; i <5 + shift; i++){
+            if(board[i] != 0){
+                return true;
+            }
+        }
+        return false;
     }
 
 

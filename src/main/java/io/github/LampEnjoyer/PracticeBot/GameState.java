@@ -235,11 +235,24 @@ public class GameState {
         moveHistory.push(moveState);
         isWhiteTurn = !isWhiteTurn;
         hash ^= Zobrist.turnHash;
+        moveCounter++;
     }
 
     public void undoMove(){ //Revert everything back
         MoveState moveState = moveHistory.pop();
         Move move = moveState.getMove();
+        if(move == null){
+            isWhiteTurn = !isWhiteTurn;
+            hash ^= Zobrist.turnHash;
+            if(moveState.getOldEnPassantSquare() != -1){
+                hash ^= Zobrist.enPassantHash[ moveState.getOldEnPassantSquare() % 8];
+            }
+            currentEnPassantSquare = moveState.getOldEnPassantSquare();
+            moveCounter--;
+            halfMoveClock = moveState.getOldMoveCounter();
+            castlingRights = moveState.getOldCastlingRights();
+            return; //early return statement
+        }
         int fromIndex = move.getFromLocation();
         int toIndex = move.getToLocation();
         int movingPiece = 0, capturedPiece = -1;
@@ -583,6 +596,25 @@ public class GameState {
         }
         sortMoves(captureList);
         return captureList;
+    }
+
+    public void makeNullMove(){
+        MoveState nullMoveState = new MoveState(
+                null,                          // no actual move
+                -1,                            // no captured piece
+                castlingRights,                // current castling rights
+                halfMoveClock,                 // store BEFORE modifying
+                currentEnPassantSquare,        // store BEFORE modifying
+                isWhiteTurn ? 1 : 0            // whose turn it was
+        );
+        moveHistory.push(nullMoveState);
+        isWhiteTurn = !isWhiteTurn;
+        moveCounter++;
+        hash ^= Zobrist.turnHash;
+        if(currentEnPassantSquare != -1){
+            hash ^= Zobrist.enPassantHash[currentEnPassantSquare % 8];
+        }
+        currentEnPassantSquare = -1;
     }
 
 }
