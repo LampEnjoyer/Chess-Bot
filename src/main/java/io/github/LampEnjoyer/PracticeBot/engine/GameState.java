@@ -49,6 +49,23 @@ public class GameState {
         hash = Zobrist.computeHash(this);
     }
 
+    public void loadFen(String s){
+        board.updateBoard((s.substring(0,s.indexOf(' ')))); //Setting Boards
+        s = s.substring(s.indexOf(' ') + 1);
+        String[] arr = s.split(" ");
+        changeTurn(arr[0].equals("w"));
+        decipherFENCastle(arr[1]);
+        if(arr[2].equals("-")){
+            currentEnPassantSquare = -1;
+        } else{
+            currentEnPassantSquare = arr[2].charAt(0) - 'a' + (arr[2].charAt(1) - '0' ) * 8;
+        }
+        halfMoveClock = Integer.parseInt(arr[3]);
+        moveCounter = Integer.parseInt(arr[4]);
+        MoveValidator.generateMagicNumbers();
+        hash = Zobrist.computeHash(this);
+    }
+
 
 
     public Board getBoard(){
@@ -615,5 +632,89 @@ public class GameState {
         }
         currentEnPassantSquare = -1;
     }
+
+    private int chessNotationToIndex(String str) {
+        int file = str.charAt(0) - 'a';
+        int rank = str.charAt(1) - '1';
+        return rank * 8 + file;
+    }
+
+    public String moveToUCIFormat(Move move) {
+        StringBuilder sb = new StringBuilder();
+        int from = move.getFromLocation();
+        int to = move.getToLocation();
+        int promo = move.getPromotion();
+
+        sb.append((char) ('a' + from % 8));       // file
+        sb.append((char) ('1' + from / 8));       // rank
+
+        sb.append((char) ('a' + to % 8));
+        sb.append((char) ('1' + to / 8));
+        if (promo != 0) {
+            char p = switch (promo) {
+                case 1 -> 'n';
+                case 2 -> 'b';
+                case 3 -> 'r';
+                case 4 -> 'q';
+                default -> 0;
+            };
+            sb.append(p);
+        }
+        return sb.toString();
+    }
+
+    public Move uciToMove(String move) {
+        if (move.length() < 4) {
+            return null;
+        }
+        long[] boards = getBoard().getBitboard();
+        int from = chessNotationToIndex(move.substring(0, 2));
+        int to = chessNotationToIndex(move.substring(2, 4));
+        System.out.println(from + " " + to);
+        if (from < 0 || from > 63 || to < 0 || to > 63) {
+            return null;
+        }
+        int movingPiece = -1;
+        int capturedPiece = -1;
+        for (int i = 0; i < 12; i++) {
+            long l = boards[i];
+            if ((1L << from & l) != 0) {
+                movingPiece = i;
+            }
+            if ((1L << to & l) != 0) {
+                capturedPiece = i;
+            }
+        }
+        int moveType = 0, promo = 0;
+        if (capturedPiece != -1) { //Capture
+            moveType = 1;
+        } else if ((movingPiece == 5 || movingPiece == 11) && Math.abs(from - to) == 2) { //Castle
+            moveType = 2;
+        }
+        if (to == getCurrentEnPassantSquare() && movingPiece == (getTurn() ? 0 : 6)) { //En Passant
+            moveType = 3;
+        }
+        if (move.length() == 5) {
+            char c = move.charAt(4);
+            promo = switch (c) {
+                case 'n' -> 1;
+                case 'b' -> 2;
+                case 'r' -> 3;
+                case 'q' -> 4;
+                default -> promo;
+            };
+        }
+        return new Move(from, to, moveType, promo);
+    }
+
+    public boolean peek(){
+        return moveHistory.peek() != null;
+    }
+
+    public void resetGame(){
+        return; //filler for now
+    }
+
+
 
 }

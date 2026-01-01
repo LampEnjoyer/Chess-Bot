@@ -11,18 +11,10 @@ import java.util.Random;
 public class EngineTest {
 
 	public static void main(String[] args) throws IOException {
-		GameState gameState = new GameState("r1bq1rk1/pp1n1ppp/2pbpn2/3p4/3P1B2/2NBPN2/PP3PPP/R2Q1RK1 b - - 0 10");
+		GameState gameState = new GameState();
 		gameState.getBoard().printBoard();
-	/*	MoveScore moveScore = Evaluator.iterativeSearch(gameState,3);
-		System.out.println(moveScore);
-		System.out.println(Evaluator.positions); */
-		System.out.println(gameState.getHash());
-		gameState.makeNullMove();
-		gameState.undoMove();
-		System.out.println(gameState.getHash());
-//		for(Move m : gameState.getAllCaptures()	){
-//			System.out.println(m);
-//		}
+		MoveValidator.validateMove(gameState, new Move(12,20,0,0));
+		gameState.getBoard().printBoard();
 
 	}
 

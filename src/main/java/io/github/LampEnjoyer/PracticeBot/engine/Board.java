@@ -100,6 +100,26 @@ public class Board {
             index++;
         }
     }
+
+    public void updateBoard(String s){
+        int index = 56;
+        for(Character c : s.toCharArray()){
+            int piece = pieceFromChar(c);
+            if(piece != -1){
+                bitboard[piece] |= (1L << index);
+            } else if(c == '/'){
+                index -= 16;
+                continue;
+            } else{
+                while(c > '0'){
+                    c--;
+                    index++;
+                }
+                continue;
+            }
+            index++;
+        }
+    }
     private void createBoard(){
         // White pieces
         bitboard[0]  = 0x000000000000FF00L;  // White pawns
