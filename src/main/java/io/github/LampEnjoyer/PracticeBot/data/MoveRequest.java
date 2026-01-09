@@ -9,6 +9,10 @@ public class MoveRequest {
         this.move = move;
     }
 
+    public MoveRequest(){
+        this.move = "";
+    }
+
     public String getMove() {
         return move;
     }

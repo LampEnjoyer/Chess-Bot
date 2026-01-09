@@ -1,0 +1,5 @@
+.piece {
+    align-items: center;
+    object-fit: contain;
+    display: block;
+}

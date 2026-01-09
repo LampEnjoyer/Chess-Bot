@@ -6,6 +6,7 @@ import io.github.LampEnjoyer.PracticeBot.engine.Game;
 import io.github.LampEnjoyer.PracticeBot.engine.GameState;
 import io.github.LampEnjoyer.PracticeBot.engine.Move;
 import io.github.LampEnjoyer.PracticeBot.service.GameService;
+import jakarta.annotation.PostConstruct;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,11 @@ public class GameController {
     public String testEngine() {
         GameState g = new GameState(); // create a new game
         return "Engine initialized! Fen: " + g.getFenNotation();
+    }
+
+    @GetMapping("/ping")
+    public String ping() {
+        return "Server OK!";
     }
 
     @GetMapping("/status")
@@ -95,6 +101,11 @@ public class GameController {
             gameService.getGameState().loadFen(fen);
             return ResponseEntity.ok(gameService.getGameStateData());
         }
+    }
+
+    @PostConstruct
+    public void init() {
+        System.out.println("GameController loaded");
     }
 
     private boolean validFen(String fen){

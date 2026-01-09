@@ -1,0 +1,22 @@
+.square {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.light {
+  background-color: #f0d9b5;
+}
+
+.dark {
+  background-color: #b58863;
+}
+
+.square img {
+    width: 120%;
+    height: 120%;
+    object-fit: contain;
+    align: center;
+}
