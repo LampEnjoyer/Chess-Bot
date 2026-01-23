@@ -712,7 +712,14 @@ public class GameState {
     }
 
     public void resetGame(){
-        return; //filler for now
+        isWhiteTurn = true;
+        hasWon = false;
+        moveCounter = 1;
+        halfMoveClock = 0;
+        castlingRights = 15;
+        currentEnPassantSquare = -1;
+        board.reset();
+        hash = Zobrist.computeHash(this);
     }
 
 

@@ -261,4 +261,8 @@ public class Board {
     public int [][] getBoardValues(){
         return boardValues;
     }
+
+    public void reset(){
+        createBoard();
+    }
 }

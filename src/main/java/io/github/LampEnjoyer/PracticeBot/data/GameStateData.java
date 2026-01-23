@@ -18,6 +18,4 @@ public class GameStateData {
     public boolean isWhiteToMove() { return whiteToMove ; }
     public boolean isInCheck(){return inCheck;}
     public boolean isCheckMate(){ return checkMate; }
-
-
 }
