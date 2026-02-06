@@ -11,14 +11,23 @@ public class Evaluator {
     static final int ROOK = 500;
     static final int QUEEN = 900;
 
+    private static final int [] pieceValues = new int[]{PAWN, KNIGHT, BISHOP, ROOK, QUEEN};
+
     static final int CHECKMATE = 1000000;
+    private static final int INF = 1000000;
 
     public static int positions = 0;
     public static int ttProbes = 0;
     public static int ttHits;
     public static int notFound;
+    public static int cutoffs;
+
+
 
     private static final int MAX_QUIESCENCE_DEPTH = 10;
+
+    private static final int captureMultiplier = 10;
+    private static final int pawnPenalty = 350;
 
     public static MoveScore[][] pvTable = new MoveScore[10][10];
 
@@ -37,7 +46,9 @@ public class Evaluator {
     }
 
     public static int evaluateBoard(GameState gameState){
-        return evaluateMaterial(gameState, true) - evaluateMaterial(gameState, false);
+        int score = evaluateMaterial(gameState, true) - evaluateMaterial(gameState, false);
+        score = gameState.getTurn() ? score : -score;
+        return score;
     }
 
 
@@ -112,8 +123,8 @@ public class Evaluator {
             }
         }
         if(depth == 0){
-           // int score = evaluateBoard(gameState);
-            int score = quiescenceSearch(gameState,alpha,beta,isWhite, 0);
+           int score = evaluateBoard(gameState);
+         //   int score = quiescenceSearch(gameState,alpha,beta,isWhite, 0);
             TranspositionTable.store(hash, 0, score, depth, null);
             return new MoveScore(null, score);
         }
@@ -159,7 +170,10 @@ public class Evaluator {
                 beta = Math.min(beta, bestScore);
             }
 
-            if (alpha >= beta) break; // Alpha-beta cutoff
+            if (alpha >= beta){
+                cutoffs++;
+                break; // Alpha-beta cutoff
+            }
         }
         int flag;
         if(bestScore <= originalAlpha){
@@ -232,6 +246,128 @@ public class Evaluator {
         }
         return false;
     }
+
+    public static int search(GameState gameState, int depth, int alpha, int beta) {
+        long hash = gameState.getHash();
+        TTEntry e = TranspositionTable.retrieve(hash);
+        if(e != null && e.getZobristHash() == hash && e.getDepth() >= depth){
+            if(e.getFlag() == 0){ //Exact
+                return e.getScore();
+            } else if(e.getFlag() == 1 && e.getScore() >= beta){ //beta is best we can do
+                return e.getScore();
+            }else if(e.getFlag() == 2 && e.getScore() <= alpha){ //alpha is worse we can do
+                return e.getScore();
+            }
+        }
+        positions++;
+        Move bestMove = null;
+        List<Move> moveList = gameState.getAllPossibleMoves(gameState.getTurn());
+        orderMoves(gameState,moveList);
+        if(e != null && e.getMove() != null){
+            reorderMoves(e.getMove(), moveList);
+        }
+        int origAlpha = alpha;
+        if(moveList.isEmpty()) {
+            if(MoveValidator.isKingInCheck(gameState, gameState.getTurn())) {
+                return -CHECKMATE + depth; // Faster mates score better
+            }
+            return 0; // Stalemate
+        }
+        if(depth <= 0) {
+            return evaluateBoard(gameState);
+        }
+        for(Move move : moveList) {
+            gameState.makeMove(move);
+            int eval = -search(gameState, depth - 1, -beta, -alpha);
+            gameState.undoMove();
+            if(eval >= beta) {
+                TranspositionTable.store(hash, depth, beta, 1, bestMove);
+                cutoffs++;
+                return beta; // Beta cutoff
+            }
+            if(eval > alpha) {
+                alpha = eval;
+                bestMove = move;
+            }
+        }
+        int flag;
+        if(alpha <= origAlpha){ //move ended up being worse or does nothing
+             flag = 2;
+        }else{
+            flag = 0;
+        }
+        TranspositionTable.store(hash, depth, alpha, flag, bestMove);
+        return alpha;
+    }
+
+    public static MoveScore findBestMove(GameState gameState, int depth) {
+        positions = 0;
+        cutoffs = 0;
+        Move bestMove = null;
+        int bestScore = -INF;
+        List<Move> moves = gameState.getAllPossibleMoves(gameState.getTurn());
+        orderMoves(gameState, moves);
+        for(Move move : moves) {
+            gameState.makeMove(move);
+            int score = -search(gameState, depth - 1, -INF, INF);
+            gameState.undoMove();
+            if(score > bestScore) {
+                bestScore = score;
+                bestMove = move;
+            }
+        }
+        return new MoveScore(bestMove, bestScore);
+    }
+
+    public static void orderMoves(GameState gameState, List<Move> list){
+        int[][] positionValues = gameState.getBoard().getBoardValues();
+        for(Move m : list){
+            int score = 0;
+            int fromIndex = m.getFromLocation();
+            int toIndex = m.getToLocation();
+            int movingType = -1, capturedType = -1;
+            long[] pieces = gameState.getBoard().getBitboard();
+            for(int i = 0; i<12; i++){
+                if( (pieces[i] & (1L << fromIndex)) != 0){
+                    movingType = i;
+                }
+                if( (pieces[i] & (1L << toIndex)) != 0){
+                    capturedType= i;
+                }
+            }
+            if(capturedType != -1){
+                if(movingType % 6 != 5){
+                    score += (pieceValues[capturedType%6] * captureMultiplier) - pieceValues[movingType % 6];
+                    score += (positionValues[movingType%6][toIndex] - positionValues[movingType%6][fromIndex]);
+                }else{
+                    score += (pieceValues[capturedType%6] * captureMultiplier);
+                }
+            }
+            m.setScore(score);
+        }
+        list.sort((m1, m2) -> {
+            // First, prioritize captures
+            int t1 = m1.getMoveType();
+            int t2 = m2.getMoveType();
+            if (t1 != 0 && t2 == 0) return -1; // m1 capture, m2 normal -> m1 first
+            if (t1 == 0 && t2 != 0) return 1;  // m1 normal, m2 capture -> m2 first
+
+            // If both are the same type (both captures or both normal), sort by score descending
+            return Integer.compare(m2.getScore(), m1.getScore());
+        });
+    }
+
+    public static MoveScore iterative(GameState gameState, int maxDepth){
+        MoveScore best = null;
+        for(int i = 1; i <= maxDepth; i++){
+            best = findBestMove(gameState, i);
+        }
+        return best;
+    }
+
+
+
+
 
 
 }

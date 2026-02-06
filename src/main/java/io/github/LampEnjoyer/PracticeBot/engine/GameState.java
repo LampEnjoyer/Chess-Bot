@@ -499,7 +499,6 @@ public class GameState {
 //                    System.out.println(m);
 //                    System.out.println("---Undoing------");
                     undoMove();
-                    assignScore(m);
 //                    board.printBoard();
                     list.add(m);
                 }
