@@ -154,20 +154,14 @@ public class GameState {
     }
 
     public void makeMove(Move move){
+        long [] boards = board.getBitboard();
+        int [] pieceBoard = board.getPieceBoard();
         int fromIndex = move.getFromLocation();
         int toIndex = move.getToLocation();
         int isWhite = isWhiteTurn ? 0 : 1;
-        int movingPiece = -1, capturedPiece = -1;
-        long [] boards = board.getBitboard();
-        for(int i = 0; i<12; i++){
-            long l = boards[i];
-            if( (1L << fromIndex & l) != 0){
-                movingPiece = i;
-            }
-            if( (1L << toIndex & l ) != 0){
-                capturedPiece = i;
-            }
-        }
+        int movingPiece = pieceBoard[fromIndex];
+        int capturedPiece = pieceBoard[toIndex];
+
         if(movingPiece == -1) {
             System.err.println("FAILED to find piece for move: " + move);
             System.out.println(board.isCollision());
@@ -194,18 +188,23 @@ public class GameState {
             }
             //Removing rook from its spot and putting it back in to its new castled spot
             boards[capturedPiece] &= ~(1L << rookFrom);
+            pieceBoard[rookFrom] = -1;
             hash ^= Zobrist.pieceHash[capturedPiece][rookFrom];
             boards[capturedPiece] |= (1L << rookTo);
             hash ^= Zobrist.pieceHash[capturedPiece][rookTo];
+            pieceBoard[rookTo] = capturedPiece;
         }
         boards[movingPiece] &= ~(1L << fromIndex); //Removing from original index
+        pieceBoard[fromIndex]= -1;
         hash ^= Zobrist.pieceHash[movingPiece][fromIndex]; //Initial hash to remove piece from original spot
         if(move.getPromotion() != 0){ //Handling Promotions
             int promoType = move.getPromotion() + isWhite * 6;
             boards[move.getPromotion() + isWhite * 6] |= (1L << toIndex); //basically just jumping boards here
+            pieceBoard[toIndex] = move.getPromotion() + (isWhite * 6);
             hash ^= Zobrist.pieceHash[promoType][toIndex];
         }else{
             boards[movingPiece] |= (1L << toIndex); //Adding the new index
+            pieceBoard[toIndex] = movingPiece;
             hash ^= Zobrist.pieceHash[movingPiece][toIndex];
         }
         if(capturedPiece != -1 && move.getMoveType() == 1){ //Making sure its not enPassant cause that has different logic
@@ -227,8 +226,9 @@ public class GameState {
             currentEnPassantSquare = -1;
             int passantIndex = getEnPassantSquare(fromIndex,toIndex);
             boards[capturedPiece] &= ~(1L << passantIndex); //Removing the pawn that got enPassanted
+            pieceBoard[passantIndex] = -1;
             hash ^= Zobrist.pieceHash[capturedPiece][passantIndex];
-        } else{  //we are not setting an enpassant and checking if didnt make an enpassant move
+        } else{  //we are not setting an enpassant and checking if we didnt make an enpassant move
             if(currentEnPassantSquare != -1){
                 hash ^= Zobrist.enPassantHash[currentEnPassantSquare % 8];
                 oldEnPassant = currentEnPassantSquare;
@@ -245,7 +245,7 @@ public class GameState {
         } else{
             halfMoveClock = 0;
         }
-        capturedPiece %= 6; //Making this color-independent and adjusting for our movestate (sry)
+        capturedPiece %= 6; //Making this color-independent and adjusting for our move state (sry)
         capturedPiece++;
         MoveState moveState = new MoveState(move, capturedPiece, oldCastling , oldHalfMoveClock , oldEnPassant , isWhite);
         moveHistory.push(moveState);
@@ -257,6 +257,8 @@ public class GameState {
     public void undoMove(){ //Revert everything back
         MoveState moveState = moveHistory.pop();
         Move move = moveState.getMove();
+        long [] boards = board.getBitboard();
+        int [] pieceBoard = board.getPieceBoard();
         if(move == null){
             isWhiteTurn = !isWhiteTurn;
             hash ^= Zobrist.turnHash;
@@ -271,31 +273,31 @@ public class GameState {
         }
         int fromIndex = move.getFromLocation();
         int toIndex = move.getToLocation();
-        int movingPiece = 0, capturedPiece = -1;
+        int movingPiece = pieceBoard[toIndex];
+        //Captured piece is not color
+        int capturedPiece = -1;
         int moveType = move.getMoveType();
         int promo = move.getPromotion();
         int isWhite = (getWhiteBoard() & (1L << toIndex) ) != 0 ? 1 : 0;
 
-        long [] boards = board.getBitboard();
-        for(int i = 0; i<boards.length; i++){
-            if( ((1L << toIndex) & boards[i]) != 0){
-                movingPiece = i;
-            }
-        }
+
 
         boards[movingPiece] &= ~(1L << toIndex); //Removing the piece from its new position
+        pieceBoard[toIndex] = -1;
         hash ^= Zobrist.pieceHash[movingPiece][toIndex]; //Hashing out the new spot
         if(promo > 0){
             int pawn =  (isWhite^1) * 6;
             boards[pawn] |= (1L << fromIndex); //Flipping here because of poor design choices sighhhhh
+            pieceBoard[fromIndex] = pawn;
             hash ^= Zobrist.pieceHash[pawn][fromIndex]; //Hashing pawn back into its spot
         } else{
             boards[movingPiece] |= (1L << fromIndex); //Bringing the piece back to its original spot
+            pieceBoard[fromIndex] = movingPiece;
             hash ^= Zobrist.pieceHash[movingPiece][fromIndex]; //Hashing non promo piece back in
         }
         int oldEnPassant = moveState.getOldEnPassantSquare();
-        if(moveState.getCapturedPiece() != 0 ) { //making sure that there is a captured piece
-            capturedPiece = moveState.getCapturedPiece()-1 + ( (moveState.wasWhiteTurn()^1) * 6); //Finding the type of piece that got captured
+        if(moveState.getCapturedPiece() != 0 ) {
+            capturedPiece = moveState.getCapturedPiece()-1 + ( (moveState.wasWhiteTurn()^1) * 6); //Finding the type of piece that got captured//making sure that there is a captured piece
             if(moveType == 2){ //Castling
                 int rookFrom, rookTo, rookType;
                 if(movingPiece == 5 && toIndex == 2){ //White king, Queen side castle
@@ -316,17 +318,21 @@ public class GameState {
                     rookFrom = 63;
                     rookTo = 61;
                 }
-                boards[rookType] |= (1L << rookFrom);
+                boards[rookType] |= (1L << rookFrom); //Bringing rook back to original spot
+                pieceBoard[rookFrom] = rookType;
                 hash ^= Zobrist.pieceHash[rookType][rookFrom];
-                boards[rookType] &= ~(1L << rookTo);
+                boards[rookType] &= ~(1L << rookTo); //Removing rook from new spot
+                pieceBoard[rookTo] = -1;
                 hash ^= Zobrist.pieceHash[rookType][rookTo];
             } else if(moveType == 3) {
                 hash ^= Zobrist.enPassantHash[oldEnPassant % 8]; //Hash back in the old enPassant
                 int enPassantIndex = !isWhiteTurn ? oldEnPassant - 8 : oldEnPassant + 8; //negated cause right now its the opposite sides turn
                 boards[capturedPiece] |= (1L << enPassantIndex); //checking if it got enPassanted
+                pieceBoard[enPassantIndex] = capturedPiece;
                 hash ^= Zobrist.pieceHash[capturedPiece][enPassantIndex]; //hash back in the enpassanted piece
             } else{
                 boards[capturedPiece] |= (1L << toIndex); //returning it back
+                pieceBoard[toIndex] = capturedPiece;
                 hash ^= Zobrist.pieceHash[capturedPiece][toIndex];
             }
         }
@@ -422,7 +428,7 @@ public class GameState {
         if(fromIndex >= 64 || fromIndex < 0 || toIndex >= 64 || toIndex < 0){
             return null;
         }
-        int movingPiece = -1;
+        int movingPiece = (fromIndex);
         int capturedPiece = -1;
         for(int i = 0; i<12; i++){
             long l = boards[i];

@@ -1,7 +1,10 @@
 package io.github.LampEnjoyer.PracticeBot.engine;
 
+import java.util.Arrays;
+
 public class Board {
     private long bitboard[] = new long[12];
+    private int [] pieceBoard = new int[64];
 
     private final int [][] boardValues = {
         // Pawn
@@ -71,6 +74,17 @@ public class Board {
                     20, 30, 10,  0,  0, 10, 30, 20
         }
     };
+    private final int [] defaultPieceBoard =
+            { 3, 1, 2, 4, 5, 2, 1, 3,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            -1, -1, -1, -1, -1, -1, -1,-1,
+            -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1,
+            6, 6, 6, 6, 6, 6, 6, 6,
+            9, 7, 8, 10, 11, 8, 7, 9
+    };
+
     public Board(){
         createBoard();
     }
@@ -98,6 +112,15 @@ public class Board {
                 continue;
             }
             index++;
+        }
+        Arrays.fill(pieceBoard, -1);
+        for(int i = 0; i<12; i++){
+            long board = bitboard[i];
+            while(board != 0){
+                int pieceIndex = Long.numberOfTrailingZeros(board);
+                board &= ~(1L << pieceIndex);
+                pieceBoard[pieceIndex] = i;
+            }
         }
     }
 
@@ -136,6 +159,8 @@ public class Board {
         bitboard[9]  = 0x8100000000000000L;  // Black rooks
         bitboard[10] = 0x0800000000000000L;  // Black queen
         bitboard[11] = 0x1000000000000000L;  // Black king
+
+        pieceBoard = defaultPieceBoard;
     }
 
     public void printBoard(){
@@ -149,6 +174,22 @@ public class Board {
                         piece = pieceSymbols[i];
                         break;
                     }
+                }
+                System.out.print(piece + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    public void printPieceBoard(){
+        char[] pieceSymbols = {'P', 'N', 'B', 'R', 'Q', 'K','p', 'n', 'b', 'r', 'q', 'k'};
+        for(int rank = 7; rank >= 0; rank--){
+            for(int col  = 0; col < 8; col++){
+                int index = rank * 8 + col;
+                char piece = '.';
+                int pieceType = pieceBoard[index];
+                if(pieceType != -1){
+                    piece = pieceSymbols[pieceType];
                 }
                 System.out.print(piece + " ");
             }
@@ -264,5 +305,9 @@ public class Board {
 
     public void reset(){
         createBoard();
+    }
+
+    public int[] getPieceBoard(){
+        return pieceBoard;
     }
 }
