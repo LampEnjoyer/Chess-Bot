@@ -412,33 +412,27 @@ public class GameState {
     }
 
     public PieceType getPieceAt(int index){
-        for(int i = 0; i<12; i++){
-            long l = board.getBitboard()[i];
-            if( ((1L << index) & l) != 0){
-                return PieceType.values()[i % 6];
-            }
-        }
-        return null;
+//        for(int i = 0; i<12; i++){
+//            long l = board.getBitboard()[i];
+//            if( ((1L << index) & l) != 0){
+//                return PieceType.values()[i % 6];
+//            }
+//        }
+        int [] pieceBoard = board.getPieceBoard();
+        return pieceBoard[index] != -1 ? PieceType.values()[pieceBoard[index] % 6] : null;
     }
 
     public Move creatingMove(String from, String to){
         long [] boards = board.getBitboard();
+        int[] pieceBoard = board.getPieceBoard();
         int fromIndex = from.charAt(0) - 'a' + (from.charAt(1) - '0' * 8);
         int toIndex = to.charAt(0) - 'a' + (to.charAt(1) - '0' * 8);
         if(fromIndex >= 64 || fromIndex < 0 || toIndex >= 64 || toIndex < 0){
             return null;
         }
-        int movingPiece = (fromIndex);
-        int capturedPiece = -1;
-        for(int i = 0; i<12; i++){
-            long l = boards[i];
-            if( (1L << fromIndex & l) != 0){
-                movingPiece = i;
-            }
-            if( (1L << toIndex & l ) != 0){
-                capturedPiece = i;
-            }
-        }
+        int movingPiece = pieceBoard[fromIndex];
+        int capturedPiece = pieceBoard[toIndex];
+
         int moveType = 0;
         if(capturedPiece != -1){
             moveType = 1;
@@ -510,7 +504,7 @@ public class GameState {
                 }
             }
         }
-        sortMoves(list);
+       // sortMoves(list);
         return list;
     }
 

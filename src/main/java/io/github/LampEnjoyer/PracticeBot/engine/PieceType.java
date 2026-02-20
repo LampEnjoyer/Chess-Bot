@@ -164,17 +164,17 @@ public enum PieceType {
         public boolean attacksKing(GameState gameState, long[][] pieceMoveMasks, boolean isWhite) { //Early return statement as opposed to others
             long[] boards = gameState.getBoard().getBitboard();
             int shift = isWhite ? 0 : 6;
-            long kingIndex = isWhite ? boards[11]: boards[5];
+            int enemyKingIndex = isWhite ? Long.numberOfTrailingZeros(boards[11]): Long.numberOfTrailingZeros(boards[5]);
             long knightBoard = boards[shift + 1];
 
-            while(knightBoard != 0){
-                int knightIndex = Long.numberOfTrailingZeros(knightBoard);
-                if((pieceMoveMasks[1][knightIndex] & kingIndex) != 0){
-                    return true;
-                }
-                knightBoard &= ~(1L << knightIndex);
-            }
-            return false;
+            return (pieceMoveMasks[1][enemyKingIndex] & knightBoard) != 0;
+//            while(knightBoard != 0){
+//                int knightIndex = Long.numberOfTrailingZeros(knightBoard);
+//                if((pieceMoveMasks[1][knightIndex] & kingIndex) != 0){
+//                    return true;
+//                }
+//                knightBoard &= ~(1L << knightIndex);
+//            }
         }
 
         @Override
@@ -259,18 +259,11 @@ public enum PieceType {
             long [] magicNumbers = MoveValidator.getBishopMagicNumbers();
             long [][] attackTable = MoveValidator.getBishopAttackTable();
             long bishopBoard = boards[shift + 2];
-
-            while(bishopBoard != 0){
-                int bishopIndex = Long.numberOfTrailingZeros(bishopBoard);
-                long blockerBoard = MoveValidator.getBishopBlockerBoard(gameState, bishopIndex);
-                int numBits = countBits(MoveValidator.getBishopBlockerMask(bishopIndex));
-                int attackIndex = (int) ((blockerBoard * magicNumbers[bishopIndex]) >>> (64-numBits));
-                if( (attackTable[bishopIndex][attackIndex] & kingIndex) != 0){
-                    return true;
-                }
-                bishopBoard &= ~(1L << bishopIndex);
-            }
-            return false;
+            int ksq = Long.numberOfTrailingZeros(kingIndex);
+            long blockerBoard = MoveValidator.getBishopBlockerBoard(gameState, ksq);
+            int numBits = countBits(MoveValidator.getBishopBlockerMask(ksq));
+            int attackIndex = (int) ((blockerBoard * magicNumbers[ksq]) >>> (64-numBits));
+            return (attackTable[ksq][attackIndex] & bishopBoard) != 0;
         }
 
         @Override
@@ -336,7 +329,6 @@ public enum PieceType {
             long [][] attackTable = MoveValidator.getBishopAttackTable();
             long bishopBoard = boards[shift + 2];
             long friendlyPieces = isWhite ? gameState.getWhiteBoard() : gameState.getBlackBoard();
-
             while(bishopBoard != 0){
                 int bishopIndex = Long.numberOfTrailingZeros(bishopBoard);
                 long blockerBoard = MoveValidator.getBishopBlockerBoard(gameState, bishopIndex);
@@ -348,8 +340,6 @@ public enum PieceType {
             }
             return l;
         }
-
-
     },
     ROOK(3){
         @Override
@@ -373,18 +363,22 @@ public enum PieceType {
             long [] magicNumbers = MoveValidator.getRookMagicNumbers();
             long [][] attackTable = MoveValidator.getRookAttackTable();
             long rookBoard = boards[shift + 3];
+            int ksq = Long.numberOfTrailingZeros(kingIndex);
+            long blockerBoard = MoveValidator.getRookBlockerBoard(gameState, ksq);
+            int bits = countBits(MoveValidator.getRookBlockerMask(ksq));
+            int attackIndex = (int)((blockerBoard * magicNumbers[ksq]) >>> (64 - bits));
+            return (attackTable[ksq][attackIndex] & rookBoard) != 0;
+//            while(rookBoard != 0){
+//                int rookIndex = Long.numberOfTrailingZeros(rookBoard);
+//                long blockerBoard = MoveValidator.getRookBlockerBoard(gameState, rookIndex);
+//                int bits = countBits(MoveValidator.getRookBlockerMask(rookIndex));
+//                int attackIndex = (int)((blockerBoard * magicNumbers[rookIndex]) >>> (64 - bits));
+//                if( (attackTable[rookIndex][attackIndex] & kingIndex) != 0){
+//                    return true;
+//                }
+//                rookBoard &= ~(1L << rookIndex);
+//            }
 
-            while(rookBoard != 0){
-                int rookIndex = Long.numberOfTrailingZeros(rookBoard);
-                long blockerBoard = MoveValidator.getRookBlockerBoard(gameState, rookIndex);
-                int bits = countBits(MoveValidator.getRookBlockerMask(rookIndex));
-                int attackIndex = (int)((blockerBoard * magicNumbers[rookIndex]) >>> (64 - bits));
-                if( (attackTable[rookIndex][attackIndex] & kingIndex) != 0){
-                    return true;
-                }
-                rookBoard &= ~(1L << rookIndex);
-            }
-            return false;
         }
 
         @Override
@@ -449,14 +443,12 @@ public enum PieceType {
             long [][] attackTable = MoveValidator.getRookAttackTable();
             long friendlyPieces = gameState.getTurn() ? gameState.getWhiteBoard() : gameState.getBlackBoard();
             long rookBoard = boards[shift + 3];
-
             while(rookBoard != 0){
                 int rookIndex = Long.numberOfTrailingZeros(rookBoard);
                 long blockerBoard = MoveValidator.getRookBlockerBoard(gameState,rookIndex);
                 int numBits = countBits(MoveValidator.getRookBlockerMask(rookIndex));
                 int attackIndex = (int)((blockerBoard * magicNumbers[rookIndex]) >>> (64-numBits));
                 long attackMask = attackTable[rookIndex][attackIndex] & ~friendlyPieces;
-
                 l |= attackMask;
                 rookBoard &= ~(1L << rookIndex);
             }

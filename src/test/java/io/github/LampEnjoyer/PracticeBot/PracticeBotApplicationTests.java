@@ -1,13 +1,14 @@
 package io.github.LampEnjoyer.PracticeBot;
 
-import io.github.LampEnjoyer.PracticeBot.engine.Game;
-import io.github.LampEnjoyer.PracticeBot.engine.GameState;
-import io.github.LampEnjoyer.PracticeBot.engine.Move;
-import io.github.LampEnjoyer.PracticeBot.engine.MoveValidator;
+import io.github.LampEnjoyer.PracticeBot.engine.*;
 import io.github.LampEnjoyer.PracticeBot.service.GameService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -94,8 +95,37 @@ class PracticeBotApplicationTests {
 			assertTrue(makeMove & undoMove);
 		}
 	}
+	@Test
+	void checkChecks(){
+		String [] arr = new String[]{
+				"8/4k3/3P4/B7/8/8/8/4K3 b - - 0 1", //Pawn
+				"8/4k3/8/3N4/8/8/8/4K3 b - - 0 1", //Knight
+				"8/4k3/8/8/1B6/8/8/4K3 b - - 0 1", //Bishop
+				"8/4k3/8/8/8/8/4R3/4K3 b - - 0 1", //Rook
+				"8/4k3/8/8/8/8/4Q3/4K3 b - - 0 1", //Queen
+		};
+		MoveGenerator gen = new MoveGenerator();
+		long[][] moveMasks = gen.getPieceMoveMasks();
+		for(int i = 0; i<5; i++){
+			GameState gameState = new GameState(arr[i]);
+			boolean attacks = PieceType.values()[i].attacksKing(gameState, moveMasks,true);
+			assertTrue(attacks);
+		}
+	}
+	@Test
+	void checkOpening(){
+		try{
+			Opening book = new Opening();
+			List<String> bookList = book.getGames();
+            assert bookList.size() == 7756 : "Size is " + bookList.size();
+		}catch(IOException e){
+            fail();
+		}
+	}
 
-	boolean compareBoards(GameState gameState){
+
+
+	private boolean compareBoards(GameState gameState){
 		long [] bitboards = gameState.getBoard().getBitboard();
 		int [] pieceBoard = gameState.getBoard().getPieceBoard();
 		for(int i = 0; i<64; i++){

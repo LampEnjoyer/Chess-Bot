@@ -166,14 +166,8 @@ public class MoveValidator {
     }
 
     public static int findPiece(GameState gameState, int fromIndex){
-        long [] bitboards = gameState.getBoard().getBitboard();
-        int num = - 1;
-        for(int i = 0; i<bitboards.length; i++){
-            if( ((1L << fromIndex) & bitboards[i]) != 0){
-                num = i;
-            }
-        }
-        return num; //default case -1 won't ever happen i hope
+        int [] pieceBoard = gameState.getBoard().getPieceBoard();
+        return pieceBoard[fromIndex];
     }
     // 0 = White Pawn, 1 = Knight, 2 = Bishop, 3 = Rook, 4 = Queen, 5 = White King, 6 = Black Pawn, 11 = Black
     public static int adjustPiece(int pieceType){ //this is an adjustment because our moveMasks aren't 1-1 with the bitboards due to some pieces not being color-dependent
@@ -468,33 +462,6 @@ public class MoveValidator {
         }
     }
 
-
-    public static class OpeningBook {
-        private Map<String, List<String>> map;
-
-        public OpeningBook () throws IOException {
-            ObjectMapper mapper = new ObjectMapper();
-            this.map = mapper.readValue(new File("src/main/java/io/github/LampEnjoyer/PracticeBot/book.json"), new TypeReference<Map<String, List<String>>>(){});
-        }
-
-        public boolean isBookPosition(String str){
-            return map.containsKey(str);
-        }
-
-        public String getMove(String str){
-            List<String> list = map.get(str);
-            Random random = new Random();
-            return list.get(random.nextInt(list.size()));
-        }
-
-        public Map<String, List<String>> getMap(){
-            return map;
-        }
-
-
-
-
-    }
 }
 
 
