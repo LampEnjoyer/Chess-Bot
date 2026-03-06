@@ -7,7 +7,7 @@ public class Game { //OLD FILE USED FOR COMMAND LINE INPUT
     private GameState gameState;
     private Scanner scan;
     private MoveGenerator moveGenerator = new MoveGenerator();
-    private MoveValidator.OpeningBook book;
+
 
     public Game() {
         this.gameState = new GameState();
@@ -56,46 +56,6 @@ public class Game { //OLD FILE USED FOR COMMAND LINE INPUT
         }
     }
 
-    public void playWithBot() {
-        while (true) {
-            gameState.getBoard().printBoard();
-            System.out.println((gameState.getTurn() ? "White" : "Black") + "'s turn");
-            if (MoveValidator.isKingInCheck(gameState, !gameState.getTurn())) {
-                System.out.println((gameState.getTurn() ? "White" : "Black") + " is in check");
-                if (MoveValidator.isCheckMate(gameState)) {
-                    System.out.println((gameState.getTurn() ? "White" : "Black") + " is in checkmate");
-                    break;
-                }
-            }
-            if (gameState.getTurn()) {
-                System.out.println("Enter a move (e.g. : e2e4)");
-                String input = scan.nextLine();
-                Move move = getPlayerMove(input);
-                System.out.println(move);
-                if (move == null || !MoveValidator.validateMove(gameState, move)) {
-                    System.out.println("Invalid choice");
-                    continue;
-                } else {
-                    System.out.println("Good move");
-                    System.out.println("Collision: " + gameState.getBoard().isCollision());
-                    System.out.println(gameState.getFenNotation());
-                }
-            } else {
-                Move move;
-                if (book.isBookPosition(gameState.getFenNotation())) {
-                    System.out.println("here");
-                    move = getPlayerMove(book.getMove(gameState.getFenNotation()));
-                } else {
-                    move = Evaluator.getBestMove(gameState, 2, Integer.MIN_VALUE, Integer.MAX_VALUE, false, null, true).getMove();
-                }
-                gameState.makeMove(move);
-                System.out.println("Good move");
-                System.out.println("Collision: " + gameState.getBoard().isCollision());
-                System.out.println(gameState.getFenNotation());
-                gameState.incrementMoveCounter();
-            }
-        }
-    }
 
     public Move getPlayerMove(String input) {
         if (input.length() != 4) {

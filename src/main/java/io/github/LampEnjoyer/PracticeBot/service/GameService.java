@@ -7,13 +7,11 @@ import org.springframework.stereotype.Service;
 public class GameService {
 
     private final GameState gameState;
+    private final Engine engine;
 
-    public GameService() {
+    public GameService(Engine engine) {
         this.gameState = new GameState();
-    }
-
-    public GameService(Board board){
-        this.gameState = new GameState(board);
+        this.engine = engine;
     }
 
     public GameState getGameState(){
@@ -32,7 +30,7 @@ public class GameService {
     }
 
     public String getBestMoveUCI() {
-        Move move = Evaluator.getBestMove(gameState,6,Integer.MIN_VALUE, Integer.MAX_VALUE, gameState.getTurn(),null,true ).getMove();
+        Move move = engine.getBestMove(gameState,6,Integer.MIN_VALUE, Integer.MAX_VALUE, gameState.getTurn(),null,true ).getMove();
         return gameState.moveToUCIFormat(move);
     }
     public void resetGame() {

@@ -8,7 +8,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -114,14 +116,19 @@ class PracticeBotApplicationTests {
 	}
 	@Test
 	void checkOpening(){
+		Opening book = null;
 		try{
-			Opening book = new Opening();
+			book = new Opening();
 			List<String> bookList = book.getGames();
             assert bookList.size() == 7756 : "Size is " + bookList.size();
 		}catch(IOException e){
             fail();
 		}
+		int [] arr = book.parseAlgebraic("e4", true);
+		assert Arrays.equals(arr, new int[]{0, -1, -1, 28, -1, -1}) : arr;
 	}
+
+
 
 
 

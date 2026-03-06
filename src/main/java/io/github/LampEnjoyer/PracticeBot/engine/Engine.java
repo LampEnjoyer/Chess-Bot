@@ -1,9 +1,12 @@
 package io.github.LampEnjoyer.PracticeBot.engine;
 
 
-import java.util.List;
+import org.springframework.stereotype.Component;
 
-public class Evaluator {
+import java.io.IOException;
+import java.util.List;
+@Component
+public class Engine {
 
     static final int PAWN = 100;
     static final int KNIGHT = 300;
@@ -22,18 +25,26 @@ public class Evaluator {
     public static int notFound;
     public static int cutoffs;
 
-
-
     private static final int MAX_QUIESCENCE_DEPTH = 10;
 
     private static final int captureMultiplier = 10;
     private static final int pawnPenalty = 350;
 
-    public static MoveScore[][] pvTable = new MoveScore[10][10];
+    private static List<String> openingBook;
+
+    public Engine(){
+        try {
+            Opening book = new Opening();
+            openingBook = book.getGames();
+        }catch (IOException e){
+            System.out.println("Error");
+        }
+    }
 
 
 
-    public static int evaluateMaterial(GameState gameState, boolean isWhite){
+
+    public int evaluateMaterial(GameState gameState, boolean isWhite){
         int shift = isWhite ? 0 : 6;
         long [] bitboard = gameState.getBoard().getBitboard();
         int material = 0;
@@ -45,14 +56,14 @@ public class Evaluator {
         return material;
     }
 
-    public static int evaluateBoard(GameState gameState){
+    public int evaluateBoard(GameState gameState){
         int score = evaluateMaterial(gameState, true) - evaluateMaterial(gameState, false);
         score = gameState.getTurn() ? score : -score;
         return score;
     }
 
 
-    public static int countBits(long num) {
+    public int countBits(long num) {
         int count = 0;
         while (num > 0) {
             num &= (num - 1);
@@ -61,7 +72,7 @@ public class Evaluator {
         return count;
     }
 
-    public static MoveScore miniMax(GameState gameState, int depth, boolean isWhite) {
+    public MoveScore miniMax(GameState gameState, int depth, boolean isWhite) {
         if (depth == 0) {
             return new MoveScore(null, evaluateBoard(gameState));
         }
@@ -93,7 +104,7 @@ public class Evaluator {
         }
         return new MoveScore(bestMove, bestEval);
     }
-    public static MoveScore getBestMove(GameState gameState, int depth, int alpha, int beta, boolean isWhite, MoveScore prevBest, boolean allowNull){
+    public MoveScore getBestMove(GameState gameState, int depth, int alpha, int beta, boolean isWhite, MoveScore prevBest, boolean allowNull){
         positions++;
         long hash = Zobrist.computeHash(gameState);
         ttProbes++;
@@ -187,7 +198,7 @@ public class Evaluator {
         return new MoveScore(bestMove, bestScore);
     }
 
-    private static void reorderMoves(Move move, List<Move> list)  {//Figure out why so many hash collisions
+    private void reorderMoves(Move move, List<Move> list)  {//Figure out why so many hash collisions
         if(!list.remove(move)) {
             notFound++;
         } else {
@@ -195,7 +206,7 @@ public class Evaluator {
         }
     }
 
-    public static MoveScore iterativeSearch(GameState gameState, int depth){
+    public MoveScore iterativeSearch(GameState gameState, int depth){
         MoveScore bestMove = null;
         for(int i = 1; i<= depth; i++){
             bestMove = getBestMove(gameState, i,Integer.MIN_VALUE, Integer.MAX_VALUE, gameState.getTurn(), bestMove, true);
@@ -203,7 +214,7 @@ public class Evaluator {
         return bestMove;
     }
 
-    public static int quiescenceSearch(GameState gameState, int alpha, int beta, boolean isWhite, int depth){
+    public int quiescenceSearch(GameState gameState, int alpha, int beta, boolean isWhite, int depth){
         int boardEval = evaluateBoard(gameState);
         // Stand-pat from current player's perspective
         int standPat = isWhite ? boardEval : -boardEval;
@@ -236,7 +247,7 @@ public class Evaluator {
         return alpha;
     }
 
-    public static boolean hasOnlyPawns(GameState gameState, boolean isWhite){
+    public boolean hasOnlyPawns(GameState gameState, boolean isWhite){
         int shift = isWhite ? 0 : 6;
         long [] board = gameState.getBoard().getBitboard();
         for(int i = 1 + shift; i <5 + shift; i++){
@@ -247,7 +258,7 @@ public class Evaluator {
         return false;
     }
 
-    public static int search(GameState gameState, int depth, int alpha, int beta) {
+    public int search(GameState gameState, int depth, int alpha, int beta) {
         long hash = gameState.getHash();
         TTEntry e = TranspositionTable.retrieve(hash);
         if(e != null && e.getZobristHash() == hash && e.getDepth() >= depth){
@@ -300,7 +311,7 @@ public class Evaluator {
         return alpha;
     }
 
-    public static MoveScore findBestMove(GameState gameState, int depth) {
+    public MoveScore findBestMove(GameState gameState, int depth) {
         positions = 0;
         cutoffs = 0;
         Move bestMove = null;
@@ -319,7 +330,7 @@ public class Evaluator {
         return new MoveScore(bestMove, bestScore);
     }
 
-    public static void orderMoves(GameState gameState, List<Move> list){
+    public void orderMoves(GameState gameState, List<Move> list){
         int[][] positionValues = gameState.getBoard().getBoardValues();
         for(Move m : list){
             int score = 0;
@@ -357,13 +368,14 @@ public class Evaluator {
         });
     }
 
-    public static MoveScore iterative(GameState gameState, int maxDepth){
+    public MoveScore iterative(GameState gameState, int maxDepth){
         MoveScore best = null;
         for(int i = 1; i <= maxDepth; i++){
             best = findBestMove(gameState, i);
         }
         return best;
     }
+
 
 
 

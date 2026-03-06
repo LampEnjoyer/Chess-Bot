@@ -205,7 +205,7 @@ public enum PieceType {
             long friendlyPieces = gameState.getTurn() ? gameState.getWhiteBoard() : gameState.getBlackBoard();
             while(knightBoard != 0){
                 int knightIndex = Long.numberOfTrailingZeros(knightBoard);
-                long moves = knightMoveMasks[knightIndex] &= ~friendlyPieces;
+                long moves = knightMoveMasks[knightIndex] & ~friendlyPieces;
                 while (moves != 0){
                     int toIndex = Long.numberOfTrailingZeros(moves);
                     int moveType = (1L << toIndex & enemyPieces) == 0 ? 0 : 1;
